@@ -1,34 +1,39 @@
 pipeline {
-    agent any
-    environment {
-        AWS_ACCESS_KEY_ID     = credentials('jenkins-aws-secret-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('jenkins-aws-secret-access-key')
+    agent {
+        label 'mac'
+    }
+    tools{
+        maven 'maven-v3.8.1' // get it from global tool
     }
     stages {
-        stage('Terraform Init') {
+        stage('Build jar') {
             steps {
-                sh '''
-                   cd Infrastructure/
-                   terraform init
-                '''
-            }
-        }
-        stage('Terraform Apply or Destroy') {
-            input {
-                message 'Apply or Destroy?'
-                ok  'Do it!'
-                parameters {
-                    string(name: 'TARGET_ENVIRONMENT', defaultValue: 'apply', description: 'Target Deployment Environment')
+                script{
+                    echo 'building application'
+                    sh 'cd java-maven-app/ && mvn package'
                 }
             }
+        }
+        stage('Build image') {
             steps {
-                sh """
-                   cd Infrastructure/
-                   terraform init
-                   terraform ${TARGET_ENVIRONMENT} -auto-approve
-                """
+                script{
+                    echo 'building docker image'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]){
+                        sh 'docker build -t aseli/sample-jenkins:v1 .'  // creating image localy
+                        sh "docker login -u $USER -p $PASS"   // login to my docker hub
+                        sh 'docker push aseli/sample-jenkins:v1' //pushing the local image to docker hub
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                script{
+                    echo 'deploying application ...'
+                }
             }
         }
 
     }
 }
+
