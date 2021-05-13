@@ -19,9 +19,9 @@ pipeline {
                 script{
                     echo 'building docker image'
                     withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]){
-                        sh 'docker build -t aseli/sample-jenkins:v1 .' // creating image localy
+                        sh 'docker build -t aseli/sample-jenkins:v2 .' // creating image localy
                         sh "echo $PASS | docker login -u $USER --password-stdin" // login to my docker hub
-                        sh 'docker push aseli/sample-jenkins:v1' //pushing the local image to docker hub
+                        sh 'docker push aseli/sample-jenkins:v2' //pushing the local image to docker hub
                     }
                 }
             }
